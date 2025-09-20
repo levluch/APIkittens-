@@ -1,6 +1,5 @@
 from PySide6.QtWidgets import QWidget, QMessageBox, QFileDialog, QSizePolicy
 from PySide6.QtCore import QThread, Signal, QTimer
-
 from desktop.ui_py.ui_initial_data_page import Ui_initial_data_page
 
 
@@ -22,32 +21,32 @@ class SaveFileThread(QThread):
 
 
 class InitialDataPage(QWidget, Ui_initial_data_page):
+    calculate_triggered = Signal(list, list)  # Emits operations, robot_bases
+
     def __init__(self):
-        super(InitialDataPage, self).__init__()
+        super().__init__()
+        self.setupUi(self)
 
         self.file_path = None
         self.save_timer = QTimer(self)
         self.save_timer.setSingleShot(True)
         self.save_timer.timeout.connect(self.save_file)
 
-        self.setupUi(self)
         self.init_ui()
 
     def init_ui(self):
         self.select_file_button.clicked.connect(self.select_file_handler)
+        self.calculate_button.clicked.connect(self.handle_calculate)
         self.plainTextEdit.textChanged.connect(self.on_text_changed)
-
         self.plainTextEdit.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
     def select_file_handler(self):
         try:
             self.select_file()
         except IOError:
-            QMessageBox.warning(
-                self,
-                'Внимание',
-                'Ошибка при чтении файла'
-            )
+            QMessageBox.warning(self, 'Внимание', 'Ошибка при чтении файла')
+        except ValueError:
+            QMessageBox.warning(self, 'Внимание', 'Ошибка в формате данных файла')
 
     def select_file(self):
         fname, _ = QFileDialog.getOpenFileName(self, "Выберите файл", "", "Text Files (*.txt)")
@@ -55,7 +54,19 @@ class InitialDataPage(QWidget, Ui_initial_data_page):
             self.filename_label.setText(fname)
             self.file_path = fname
             with open(fname, 'r', encoding='utf-8') as f:
-                self.plainTextEdit.setPlainText(f.read())
+                content = f.read()
+                self.plainTextEdit.setPlainText(content)
+
+    def handle_calculate(self):
+        if not self.file_path:
+            QMessageBox.warning(self, 'Внимание', 'Сначала выберите файл')
+            return
+        content = self.plainTextEdit.toPlainText()
+        try:
+            operations, robot_bases = self.parse_input_data(content)
+            self.calculate_triggered.emit(operations, robot_bases)
+        except ValueError:
+            QMessageBox.warning(self, 'Внимание', 'Ошибка в формате данных файла')
 
     def on_text_changed(self):
         if self.file_path:
@@ -72,3 +83,22 @@ class InitialDataPage(QWidget, Ui_initial_data_page):
     def on_save_finished(self, success, message):
         if not success:
             QMessageBox.warning(self, 'Внимание', message)
+
+    def parse_input_data(self, content):
+        lines = [line.strip() for line in content.splitlines() if line.strip()]
+        if not lines:
+            return [], []
+        try:
+            num_robots, num_operations = map(int, lines[0].split())
+            idx = 1
+            robot_bases = [tuple(map(float, lines[idx + i].split())) for i in range(num_robots)]
+            idx += num_robots
+            idx += 6  # Skip joint params
+            idx += 1  # Skip tool_clearance, safe_distance
+            operations = []
+            for i in range(num_operations):
+                vals = list(map(float, lines[idx + i].split()))
+                operations.append({'pick': tuple(vals[0:3]), 'place': tuple(vals[3:6]), 't_i': vals[6]})
+            return operations, robot_bases
+        except (ValueError, IndexError):
+            raise ValueError("Некорректный формат входных данных")
