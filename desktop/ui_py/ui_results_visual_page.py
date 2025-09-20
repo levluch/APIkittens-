@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 ################################################################################
-## Form generated from reading UI file 'results_visual_pagemyYPcP.ui'
+## Form generated from reading UI file 'results_visual_pageiJveqS.ui'
 ##
 ## Created by: Qt User Interface Compiler version 6.8.2
 ##
@@ -50,11 +50,49 @@ class Ui_results_visual_page(object):
 
         self.horizontalLayout.addWidget(self.pause_pushButton)
 
+        self.verticalLayout_3 = QVBoxLayout()
+        self.verticalLayout_3.setObjectName(u"verticalLayout_3")
+        self.label = QLabel(self.groupBox)
+        self.label.setObjectName(u"label")
+
+        self.verticalLayout_3.addWidget(self.label)
+
         self.time_horizontalSlider = QSlider(self.groupBox)
         self.time_horizontalSlider.setObjectName(u"time_horizontalSlider")
         self.time_horizontalSlider.setOrientation(Qt.Orientation.Horizontal)
 
-        self.horizontalLayout.addWidget(self.time_horizontalSlider)
+        self.verticalLayout_3.addWidget(self.time_horizontalSlider)
+
+        self.label_2 = QLabel(self.groupBox)
+        self.label_2.setObjectName(u"label_2")
+
+        self.verticalLayout_3.addWidget(self.label_2)
+
+        self.scale_slider = QSlider(self.groupBox)
+        self.scale_slider.setObjectName(u"scale_slider")
+        self.scale_slider.setMinimum(1)
+        self.scale_slider.setMaximum(200)
+        self.scale_slider.setValue(100)
+        self.scale_slider.setOrientation(Qt.Orientation.Horizontal)
+
+        self.verticalLayout_3.addWidget(self.scale_slider)
+
+        self.label_3 = QLabel(self.groupBox)
+        self.label_3.setObjectName(u"label_3")
+
+        self.verticalLayout_3.addWidget(self.label_3)
+
+        self.view_speed_slider = QSlider(self.groupBox)
+        self.view_speed_slider.setObjectName(u"view_speed_slider")
+        self.view_speed_slider.setMinimum(1)
+        self.view_speed_slider.setMaximum(100)
+        self.view_speed_slider.setValue(50)
+        self.view_speed_slider.setOrientation(Qt.Orientation.Horizontal)
+
+        self.verticalLayout_3.addWidget(self.view_speed_slider)
+
+
+        self.horizontalLayout.addLayout(self.verticalLayout_3)
 
         self.verticalLayout_2 = QVBoxLayout()
         self.verticalLayout_2.setObjectName(u"verticalLayout_2")
@@ -86,6 +124,9 @@ class Ui_results_visual_page(object):
         self.reset_pushButton.setText(QCoreApplication.translate("results_visual_page", u"\u0421\u0431\u0440\u043e\u0441", None))
         self.play_pushButton.setText(QCoreApplication.translate("results_visual_page", u"\u041f\u0443\u0441\u043a", None))
         self.pause_pushButton.setText(QCoreApplication.translate("results_visual_page", u"\u041f\u0430\u0443\u0437\u0430", None))
+        self.label.setText(QCoreApplication.translate("results_visual_page", u"\u0412\u0440\u0435\u043c\u044f:", None))
+        self.label_2.setText(QCoreApplication.translate("results_visual_page", u"\u041c\u0430\u0441\u0448\u0442\u0430\u0431:", None))
+        self.label_3.setText(QCoreApplication.translate("results_visual_page", u"\u0421\u043a\u043e\u0440\u043e\u0441\u0442\u044c \u0432\u043e\u0441\u043f\u0440\u043e\u0438\u0437\u0432\u0435\u0434\u0435\u043d\u0438\u044f:", None))
         self.makespan_label.setText("")
         self.time_label.setText("")
     # retranslateUi
