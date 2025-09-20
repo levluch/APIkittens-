@@ -245,11 +245,7 @@ def run_scheduler(input_lines: List[str]) -> List[str]:
     Вход: список строк (из файла)
     Выход: список строк с результатом
     """
-    try:
-        scheduler = IndustrialRobotScheduler()
-        scheduler.load_from_lines(input_lines)
-        result = scheduler.solve()
-        return result
-    except Exception as e:
-        # Простой fallback
-        return ["10000", "R1 1", "0 0.0 0.0 0.0", "R2 1", "0 10.0 0.0 0.0"]
+    scheduler = IndustrialRobotScheduler()
+    scheduler.load_from_lines(input_lines)
+    result = scheduler.solve()
+    return result

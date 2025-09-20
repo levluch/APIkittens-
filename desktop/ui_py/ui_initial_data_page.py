@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 ################################################################################
-## Form generated from reading UI file 'initial_data_pageHNSZKv.ui'
+## Form generated from reading UI file 'initial_data_pageZqZWrC.ui'
 ##
 ## Created by: Qt User Interface Compiler version 6.8.2
 ##
@@ -30,6 +30,11 @@ class Ui_initial_data_page(object):
 
         self.gridLayout.addWidget(self.filename_label, 1, 1, 1, 1)
 
+        self.plainTextEdit = QPlainTextEdit(initial_data_page)
+        self.plainTextEdit.setObjectName(u"plainTextEdit")
+
+        self.gridLayout.addWidget(self.plainTextEdit, 2, 0, 1, 2)
+
         self.label_2 = QLabel(initial_data_page)
         self.label_2.setObjectName(u"label_2")
         font = QFont()
@@ -44,10 +49,10 @@ class Ui_initial_data_page(object):
 
         self.gridLayout.addWidget(self.select_file_button, 1, 0, 1, 1)
 
-        self.plainTextEdit = QPlainTextEdit(initial_data_page)
-        self.plainTextEdit.setObjectName(u"plainTextEdit")
+        self.calculate_button = QPushButton(initial_data_page)
+        self.calculate_button.setObjectName(u"calculate_button")
 
-        self.gridLayout.addWidget(self.plainTextEdit, 2, 0, 1, 2)
+        self.gridLayout.addWidget(self.calculate_button, 3, 0, 1, 2)
 
 
         self.retranslateUi(initial_data_page)
@@ -60,5 +65,6 @@ class Ui_initial_data_page(object):
         self.filename_label.setText("")
         self.label_2.setText(QCoreApplication.translate("initial_data_page", u"\u0418\u0441\u0445\u043e\u0434\u043d\u044b\u0435 \u0434\u0430\u043d\u043d\u044b\u0435", None))
         self.select_file_button.setText(QCoreApplication.translate("initial_data_page", u"\u0412\u044b\u0431\u0435\u0440\u0438\u0442\u0435 \u0444\u0430\u0439\u043b", None))
+        self.calculate_button.setText(QCoreApplication.translate("initial_data_page", u"\u0420\u0430\u0441\u0447\u0438\u0442\u0430\u0442\u044c", None))
     # retranslateUi
 

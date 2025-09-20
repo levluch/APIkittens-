@@ -4,6 +4,8 @@ from PySide6.QtCore import QThread, Signal
 
 from desktop.initial_data_page import InitialDataPage
 from desktop.navigation_menu import NavigationMenu
+from desktop.results_data_page import ResultsDataPage
+from desktop.results_visual_page import ResultsVisualPage
 from desktop.ui_py.ui_main_window import Ui_MainWindow
 from desktop.solver import run_scheduler
 
@@ -17,9 +19,7 @@ class SolverThread(QThread):
 
     def run(self):
         try:
-            print(self.input_lines)
             result = run_scheduler(self.input_lines)
-            print(2)
             self.calculation_finished.emit(result, "")
         except Exception as e:
             self.calculation_finished.emit([], f"Ошибка при выполнении расчёта: {str(e)}")
@@ -31,6 +31,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def __init__(self):
         super(MainWindow, self).__init__()
 
+        self.results_visual_page = None
+        self.results_page = None
         self.page_initial = None
         self.stacked_widget = None
         self.navigation_menu = None
@@ -47,18 +49,35 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
         self.stacked_widget = QStackedWidget()
         self.page_initial = InitialDataPage()
+        self.results_visual_page = ResultsVisualPage()
+        self.results_page = ResultsDataPage()
 
         self.stacked_widget.addWidget(self.page_initial)
+        self.stacked_widget.addWidget(self.results_visual_page)
+        self.stacked_widget.addWidget(self.results_page)
 
         self.horizontalLayout.addWidget(self.stacked_widget)
 
         self.navigation_menu.initial_data_button.clicked.connect(
             lambda: self.stacked_widget.setCurrentIndex(0)
         )
+        self.navigation_menu.visualisation_information_button.clicked.connect(
+            lambda: self.stacked_widget.setCurrentIndex(1)
+        )
+        self.navigation_menu.output_data_button.clicked.connect(
+            lambda: self.stacked_widget.setCurrentIndex(2)
+        )
 
         self.navigation_menu.exit_button.clicked.connect(self.close)
 
-        self.page_initial.data_changed.connect(self.recalculate_solver)
+        self.page_initial.calculate_button.clicked.connect(self.recalculate_solver)
+
+        self.data_calculated.connect(self.display_results)
+
+    def display_results(self, results):
+        self.results_page.display_results(
+            '\n'.join(results)
+        )
 
     def recalculate_solver(self):
         if not self.page_initial.file_path:
@@ -76,4 +95,3 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             QMessageBox.warning(self, 'Внимание', error_message)
         else:
             self.data_calculated.emit(results)
-            print("Calculation results:", results)

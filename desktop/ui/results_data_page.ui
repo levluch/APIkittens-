@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>initial_data_page</class>
- <widget class="QWidget" name="initial_data_page">
+ <class>results_data_page</class>
+ <widget class="QWidget" name="results_data_page">
   <property name="geometry">
    <rect>
     <x>0</x>
@@ -21,9 +21,6 @@
      </property>
     </widget>
    </item>
-   <item row="2" column="0" colspan="2">
-    <widget class="QPlainTextEdit" name="plainTextEdit"/>
-   </item>
    <item row="0" column="0" colspan="2">
     <widget class="QLabel" name="label_2">
      <property name="font">
@@ -32,7 +29,7 @@
       </font>
      </property>
      <property name="text">
-      <string>Исходные данные</string>
+      <string>Выходные данные</string>
      </property>
      <property name="alignment">
       <set>Qt::AlignmentFlag::AlignCenter</set>
@@ -40,18 +37,14 @@
     </widget>
    </item>
    <item row="1" column="0">
-    <widget class="QPushButton" name="select_file_button">
+    <widget class="QPushButton" name="save_file_button">
      <property name="text">
-      <string>Выберите файл</string>
+      <string>Сохранить в txt</string>
      </property>
     </widget>
    </item>
-   <item row="3" column="0" colspan="2">
-    <widget class="QPushButton" name="calculate_button">
-     <property name="text">
-      <string>Расчитать</string>
-     </property>
-    </widget>
+   <item row="2" column="0" colspan="2">
+    <widget class="QPlainTextEdit" name="plainTextEdit"/>
    </item>
   </layout>
  </widget>
