@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 ################################################################################
-## Form generated from reading UI file 'initial_data_pageyKcnRC.ui'
+## Form generated from reading UI file 'initial_data_pageHNSZKv.ui'
 ##
 ## Created by: Qt User Interface Compiler version 6.8.2
 ##
@@ -15,8 +15,8 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
     QFont, QFontDatabase, QGradient, QIcon,
     QImage, QKeySequence, QLinearGradient, QPainter,
     QPalette, QPixmap, QRadialGradient, QTransform)
-from PySide6.QtWidgets import (QApplication, QGridLayout, QHeaderView, QLabel,
-    QPushButton, QSizePolicy, QTableView, QWidget)
+from PySide6.QtWidgets import (QApplication, QGridLayout, QLabel, QPlainTextEdit,
+    QPushButton, QSizePolicy, QWidget)
 
 class Ui_initial_data_page(object):
     def setupUi(self, initial_data_page):
@@ -25,11 +25,6 @@ class Ui_initial_data_page(object):
         initial_data_page.resize(739, 550)
         self.gridLayout = QGridLayout(initial_data_page)
         self.gridLayout.setObjectName(u"gridLayout")
-        self.data_table = QTableView(initial_data_page)
-        self.data_table.setObjectName(u"data_table")
-
-        self.gridLayout.addWidget(self.data_table, 3, 0, 1, 2)
-
         self.filename_label = QLabel(initial_data_page)
         self.filename_label.setObjectName(u"filename_label")
 
@@ -48,6 +43,11 @@ class Ui_initial_data_page(object):
         self.select_file_button.setObjectName(u"select_file_button")
 
         self.gridLayout.addWidget(self.select_file_button, 1, 0, 1, 1)
+
+        self.plainTextEdit = QPlainTextEdit(initial_data_page)
+        self.plainTextEdit.setObjectName(u"plainTextEdit")
+
+        self.gridLayout.addWidget(self.plainTextEdit, 2, 0, 1, 2)
 
 
         self.retranslateUi(initial_data_page)
