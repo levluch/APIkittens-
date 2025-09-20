@@ -1,9 +1,7 @@
-import math
 from dataclasses import dataclass
 from typing import List, Tuple
 import numpy as np
 from scipy.optimize import minimize
-import pulp
 
 
 @dataclass
