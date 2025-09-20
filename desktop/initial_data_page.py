@@ -21,7 +21,7 @@ class SaveFileThread(QThread):
 
 
 class InitialDataPage(QWidget, Ui_initial_data_page):
-    calculate_triggered = Signal(list, list)  # Emits operations, robot_bases
+    calculate_triggered = Signal(list, list)
 
     def __init__(self):
         super().__init__()
@@ -93,8 +93,8 @@ class InitialDataPage(QWidget, Ui_initial_data_page):
             idx = 1
             robot_bases = [tuple(map(float, lines[idx + i].split())) for i in range(num_robots)]
             idx += num_robots
-            idx += 6  # Skip joint params
-            idx += 1  # Skip tool_clearance, safe_distance
+            idx += 6
+            idx += 1
             operations = []
             for i in range(num_operations):
                 vals = list(map(float, lines[idx + i].split()))

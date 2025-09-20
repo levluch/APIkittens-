@@ -3,7 +3,6 @@ import qdarktheme
 from PySide6.QtWidgets import QApplication
 
 from desktop.main_window import MainWindow
-from desktop.solver import run_scheduler
 
 
 def hook(a, b, c):

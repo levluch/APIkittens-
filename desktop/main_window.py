@@ -1,6 +1,7 @@
 from PySide6.QtWidgets import QMainWindow, QStackedWidget, QMessageBox
 from PySide6.QtGui import QIcon
 from PySide6.QtCore import QThread, Signal
+
 from desktop.initial_data_page import InitialDataPage
 from desktop.navigation_menu import NavigationMenu
 from desktop.results_data_page import ResultsDataPage
@@ -25,7 +26,7 @@ class SolverThread(QThread):
 
 
 class MainWindow(QMainWindow, Ui_MainWindow):
-    data_calculated = Signal(list, list, list)  # results, operations, robot_bases
+    data_calculated = Signal(list, list, list)
 
     def __init__(self):
         super().__init__()

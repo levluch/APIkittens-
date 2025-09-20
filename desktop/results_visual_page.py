@@ -19,14 +19,14 @@ class ResultsVisualPage(QWidget, Ui_results_visual_page):
         self.operations = []
         self.robot_bases = []
         self.manipulators = {}
-        self.coord_labels = {}  # {r_id: QGraphicsTextItem for coordinates}
-        self.base_labels = []  # List of QGraphicsTextItem for bases
-        self.pick_place_labels = []  # List of QGraphicsTextItem for pick/place points
+        self.coord_labels = {}
+        self.base_labels = []
+        self.pick_place_labels = []
         self.trajectory_lines = {}
         self.scale_factor = 10
-        self.view_scale = 1.0  # Initial view scale (100%)
+        self.view_scale = 1.0
         self.is_animating = False
-        self.step_size = 50  # Smaller step size for smoother animation
+        self.step_size = 50
 
         self.init_ui()
 
@@ -47,7 +47,8 @@ class ResultsVisualPage(QWidget, Ui_results_visual_page):
         self.reset_animation()
         self.draw_scene()
 
-    def parse_results(self, results):
+    @staticmethod
+    def parse_results(results):
         makespan = int(results[0])
         robots = {}
         i = 1
@@ -59,6 +60,7 @@ class ResultsVisualPage(QWidget, Ui_results_visual_page):
                 t, x, y, z = map(float, results[j].split())
                 robots[r_id].append({'t': int(t), 'x': x, 'y': y, 'z': z})
             i += m + 1
+
         return makespan, robots
 
     def draw_scene(self):
@@ -91,7 +93,6 @@ class ResultsVisualPage(QWidget, Ui_results_visual_page):
             label.setPos(base[0] * self.scale_factor + 5, base[1] * self.scale_factor + 5)
             self.base_labels.append(label)
 
-        # Draw pick/place points with labels
         for idx, op in enumerate(self.operations):
             pick_ellipse = self.scene.addEllipse(op['pick'][0] * self.scale_factor - 3,
                                                  op['pick'][1] * self.scale_factor - 3,
@@ -108,7 +109,6 @@ class ResultsVisualPage(QWidget, Ui_results_visual_page):
             self.pick_place_labels.append(pick_label)
             self.pick_place_labels.append(place_label)
 
-        # Initialize manipulators and coord labels dynamically
         for r_id in self.robots.keys():
             hue = (int(r_id[1:]) - 1) * 137 % 360
             color = QColor.fromHsv(hue, 200, 200)
@@ -142,10 +142,11 @@ class ResultsVisualPage(QWidget, Ui_results_visual_page):
         self.current_time = 0
         self.time_horizontalSlider.setValue(0)
         self.time_label.setText(f"Текущее время: {self.current_time} мс")
-        # Clear trajectory lines
+
         for r_id in self.trajectory_lines:
             for line in self.trajectory_lines[r_id]:
                 self.scene.removeItem(line)
+
         self.trajectory_lines = {r_id: [] for r_id in self.robots.keys()}
         self.update_positions()
 
@@ -179,14 +180,13 @@ class ResultsVisualPage(QWidget, Ui_results_visual_page):
                 self.coord_labels[r_id].setPlainText(f"{r_id}: ({pos[0]:.1f}, {pos[1]:.1f}, {z:.1f})")
                 self.coord_labels[r_id].setPos(pos[0] * self.scale_factor + 5, pos[1] * self.scale_factor + 5)
 
-                # Draw trajectory lines up to current time
                 hue = (int(r_id[1:]) - 1) * 137 % 360
                 color = QColor.fromHsv(hue, 200, 200)
                 pen = QPen(color, 1.5)
                 for i in range(len(waypoints) - 1):
                     wp1, wp2 = waypoints[i], waypoints[i + 1]
                     if wp1['t'] <= self.current_time:
-                        # Only draw the segment if it should be visible at current time
+
                         t_start = wp1['t']
                         t_end = min(wp2['t'], self.current_time)
                         if t_start != t_end:
@@ -195,13 +195,12 @@ class ResultsVisualPage(QWidget, Ui_results_visual_page):
                             y1 = wp1['y']
                             x2 = wp1['x'] + frac * (wp2['x'] - wp1['x'])
                             y2 = wp1['y'] + frac * (wp2['y'] - wp1['y'])
-                            # Check if this line segment is already drawn
+
                             if i >= len(self.trajectory_lines[r_id]):
                                 line = self.scene.addLine(x1 * self.scale_factor, y1 * self.scale_factor,
                                                           x2 * self.scale_factor, y2 * self.scale_factor, pen)
                                 self.trajectory_lines[r_id].append(line)
                             else:
-                                # Update existing line segment
                                 self.trajectory_lines[r_id][i].setLine(x1 * self.scale_factor, y1 * self.scale_factor,
                                                                        x2 * self.scale_factor, y2 * self.scale_factor)
 
@@ -209,6 +208,7 @@ class ResultsVisualPage(QWidget, Ui_results_visual_page):
     def interpolate_position(waypoints, t):
         if not waypoints:
             return 0, 0
+
         for i in range(len(waypoints) - 1):
             if waypoints[i]['t'] <= t <= waypoints[i + 1]['t']:
                 wp1, wp2 = waypoints[i], waypoints[i + 1]
@@ -216,6 +216,7 @@ class ResultsVisualPage(QWidget, Ui_results_visual_page):
                 x = wp1['x'] + frac * (wp2['x'] - wp1['x'])
                 y = wp1['y'] + frac * (wp2['y'] - wp1['y'])
                 return x, y
+
         return waypoints[-1]['x'], waypoints[-1]['y']
 
     @staticmethod
@@ -231,6 +232,6 @@ class ResultsVisualPage(QWidget, Ui_results_visual_page):
         return waypoints[-1]['z']
 
     def scale_changed(self, value):
-        scale = value / 100.0  # Convert to scale factor (0.5 to 2.0)
+        scale = value / 100.0
         self.graphicsView.scale(scale / self.view_scale, scale / self.view_scale)
         self.view_scale = scale
