@@ -94,3 +94,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def display_results(self, results, operations, robot_bases):
         self.results_page.display_results('\n'.join(results))
         self.results_visual_page.display_results(results, operations, robot_bases)
+
+        QMessageBox.information(
+            self,
+            'Расчет завершен',
+            'Расчет успешно завершен, вы можете проверить результат во вкладках "Визуализация" и "Выходные данные"',
+        )
