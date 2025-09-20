@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 ################################################################################
-## Form generated from reading UI file 'results_visual_pagebjABXC.ui'
+## Form generated from reading UI file 'results_visual_pageGmYPcd.ui'
 ##
 ## Created by: Qt User Interface Compiler version 6.8.2
 ##
@@ -33,6 +33,7 @@ class Ui_results_visual_page(object):
 
         self.groupBox = QGroupBox(results_visual_page)
         self.groupBox.setObjectName(u"groupBox")
+        self.groupBox.setMaximumSize(QSize(16777215, 300))
         self.horizontalLayout = QHBoxLayout(self.groupBox)
         self.horizontalLayout.setObjectName(u"horizontalLayout")
         self.reset_pushButton = QPushButton(self.groupBox)

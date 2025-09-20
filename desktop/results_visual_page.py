@@ -27,7 +27,7 @@ class ResultsVisualPage(QWidget, Ui_results_visual_page):
         self.scale_factor = 10
         self.view_scale = 1.0
         self.is_animating = False
-        self.step_size = 50
+        self.step_size = 150
 
         self.init_ui()
 
