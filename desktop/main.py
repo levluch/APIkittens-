@@ -3,6 +3,11 @@ import qdarktheme
 from PySide6.QtWidgets import QApplication
 
 from desktop.main_window import MainWindow
+from desktop.solver import run_scheduler
+
+
+def hook(a, b, c):
+    sys.__excepthook__(a, b, c)
 
 
 def main():
@@ -10,6 +15,7 @@ def main():
     app.setStyleSheet(qdarktheme.load_stylesheet(theme='light'))
     win = MainWindow()
     win.show()
+    sys.excepthook = hook
     sys.exit(app.exec())
 
 

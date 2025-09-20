@@ -1,18 +1,40 @@
-from PySide6.QtWidgets import QMainWindow, QStackedWidget
+from PySide6.QtWidgets import QMainWindow, QStackedWidget, QMessageBox
 from PySide6.QtGui import QIcon
+from PySide6.QtCore import QThread, Signal
 
 from desktop.initial_data_page import InitialDataPage
 from desktop.navigation_menu import NavigationMenu
 from desktop.ui_py.ui_main_window import Ui_MainWindow
+from desktop.solver import run_scheduler
+
+
+class SolverThread(QThread):
+    calculation_finished = Signal(list, str)
+
+    def __init__(self, input_lines):
+        super().__init__()
+        self.input_lines = input_lines
+
+    def run(self):
+        try:
+            print(self.input_lines)
+            result = run_scheduler(self.input_lines)
+            print(2)
+            self.calculation_finished.emit(result, "")
+        except Exception as e:
+            self.calculation_finished.emit([], f"Ошибка при выполнении расчёта: {str(e)}")
 
 
 class MainWindow(QMainWindow, Ui_MainWindow):
+    data_calculated = Signal(list)
+
     def __init__(self):
         super(MainWindow, self).__init__()
 
         self.page_initial = None
         self.stacked_widget = None
         self.navigation_menu = None
+        self.solver_thread = None
 
         self.setupUi(self)
         self.init_ui()
@@ -33,3 +55,25 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.navigation_menu.initial_data_button.clicked.connect(
             lambda: self.stacked_widget.setCurrentIndex(0)
         )
+
+        self.navigation_menu.exit_button.clicked.connect(self.close)
+
+        self.page_initial.data_changed.connect(self.recalculate_solver)
+
+    def recalculate_solver(self):
+        if not self.page_initial.file_path:
+            return
+
+        content = self.page_initial.plainTextEdit.toPlainText()
+        input_lines = content.splitlines()
+
+        self.solver_thread = SolverThread(input_lines)
+        self.solver_thread.calculation_finished.connect(self.on_calculation_finished)
+        self.solver_thread.start()
+
+    def on_calculation_finished(self, results, error_message):
+        if error_message:
+            QMessageBox.warning(self, 'Внимание', error_message)
+        else:
+            self.data_calculated.emit(results)
+            print("Calculation results:", results)

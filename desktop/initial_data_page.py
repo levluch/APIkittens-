@@ -1,5 +1,6 @@
 from PySide6.QtWidgets import QWidget, QMessageBox, QFileDialog, QSizePolicy
 from PySide6.QtCore import QThread, Signal, QTimer
+
 from desktop.ui_py.ui_initial_data_page import Ui_initial_data_page
 
 
@@ -21,6 +22,8 @@ class SaveFileThread(QThread):
 
 
 class InitialDataPage(QWidget, Ui_initial_data_page):
+    data_changed = Signal()
+
     def __init__(self):
         super(InitialDataPage, self).__init__()
 
@@ -56,6 +59,8 @@ class InitialDataPage(QWidget, Ui_initial_data_page):
             with open(fname, 'r', encoding='utf-8') as f:
                 self.plainTextEdit.setPlainText(f.read())
 
+            self.data_changed.emit()
+
     def on_text_changed(self):
         if self.file_path:
             self.save_timer.start(2000)
@@ -71,3 +76,6 @@ class InitialDataPage(QWidget, Ui_initial_data_page):
     def on_save_finished(self, success, message):
         if not success:
             QMessageBox.warning(self, 'Внимание', message)
+
+        else:
+            self.data_changed.emit()
