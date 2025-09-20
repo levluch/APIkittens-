@@ -1,0 +1,17 @@
+import sys
+import qdarktheme
+from PySide6.QtWidgets import QApplication
+
+from desktop.main_window import MainWindow
+
+
+def main():
+    app = QApplication(sys.argv)
+    app.setStyleSheet(qdarktheme.load_stylesheet(theme='light'))
+    win = MainWindow()
+    win.show()
+    sys.exit(app.exec())
+
+
+if __name__ == '__main__':
+    main()
