@@ -2,12 +2,12 @@ from PySide6.QtWidgets import QMainWindow, QStackedWidget, QMessageBox
 from PySide6.QtGui import QIcon
 from PySide6.QtCore import QThread, Signal
 
-from desktop.initial_data_page import InitialDataPage
-from desktop.navigation_menu import NavigationMenu
-from desktop.results_data_page import ResultsDataPage
-from desktop.results_visual_page import ResultsVisualPage
-from desktop.ui_py.ui_main_window import Ui_MainWindow
-from desktop.solver import run_scheduler
+from initial_data_page import InitialDataPage
+from navigation_menu import NavigationMenu
+from results_data_page import ResultsDataPage
+from results_visual_page import ResultsVisualPage
+from ui_py.ui_main_window import Ui_MainWindow
+from solver import run_scheduler
 
 
 class SolverThread(QThread):

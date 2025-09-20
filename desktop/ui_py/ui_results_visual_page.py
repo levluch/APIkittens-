@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 ################################################################################
-## Form generated from reading UI file 'results_visual_pageiJveqS.ui'
+## Form generated from reading UI file 'results_visual_pagebjABXC.ui'
 ##
 ## Created by: Qt User Interface Compiler version 6.8.2
 ##
@@ -17,7 +17,7 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
     QPalette, QPixmap, QRadialGradient, QTransform)
 from PySide6.QtWidgets import (QApplication, QGraphicsView, QGroupBox, QHBoxLayout,
     QLabel, QPushButton, QSizePolicy, QSlider,
-    QVBoxLayout, QWidget)
+    QSpacerItem, QVBoxLayout, QWidget)
 
 class Ui_results_visual_page(object):
     def setupUi(self, results_visual_page):
@@ -85,8 +85,8 @@ class Ui_results_visual_page(object):
         self.view_speed_slider = QSlider(self.groupBox)
         self.view_speed_slider.setObjectName(u"view_speed_slider")
         self.view_speed_slider.setMinimum(1)
-        self.view_speed_slider.setMaximum(100)
-        self.view_speed_slider.setValue(50)
+        self.view_speed_slider.setMaximum(500)
+        self.view_speed_slider.setValue(250)
         self.view_speed_slider.setOrientation(Qt.Orientation.Horizontal)
 
         self.verticalLayout_3.addWidget(self.view_speed_slider)
@@ -105,6 +105,10 @@ class Ui_results_visual_page(object):
         self.time_label.setObjectName(u"time_label")
 
         self.verticalLayout_2.addWidget(self.time_label)
+
+        self.verticalSpacer = QSpacerItem(20, 40, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding)
+
+        self.verticalLayout_2.addItem(self.verticalSpacer)
 
 
         self.horizontalLayout.addLayout(self.verticalLayout_2)

@@ -1,6 +1,6 @@
 from PySide6.QtWidgets import QWidget, QFileDialog, QMessageBox
 
-from desktop.ui_py.ui_results_data_page import Ui_results_data_page
+from ui_py.ui_results_data_page import Ui_results_data_page
 
 
 class ResultsDataPage(QWidget, Ui_results_data_page):

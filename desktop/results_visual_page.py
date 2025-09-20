@@ -1,7 +1,8 @@
 from PySide6.QtWidgets import QWidget, QGraphicsScene, QGraphicsEllipseItem, QGraphicsLineItem, QGraphicsTextItem
 from PySide6.QtCore import QTimer, Qt
 from PySide6.QtGui import QPen, QBrush, QColor
-from desktop.ui_py.ui_results_visual_page import Ui_results_visual_page
+
+from ui_py.ui_results_visual_page import Ui_results_visual_page
 
 
 class ResultsVisualPage(QWidget, Ui_results_visual_page):
@@ -43,7 +44,7 @@ class ResultsVisualPage(QWidget, Ui_results_visual_page):
         self.operations = operations or []
         self.robot_bases = robot_bases or []
         self.time_horizontalSlider.setMaximum(self.makespan)
-        self.makespan_label.setText(f"Makespan: {self.makespan} мс")
+        self.makespan_label.setText(f"Общее время (Makespan): {self.makespan} мс")
         self.reset_animation()
         self.draw_scene()
 
@@ -123,7 +124,7 @@ class ResultsVisualPage(QWidget, Ui_results_visual_page):
 
     def change_speed_timer(self):
         if self.is_animating:
-            self.timer.start(100 - self.view_speed_slider.value())
+            self.timer.start(500 - self.view_speed_slider.value())
 
     def start_animation(self):
         if self.current_time >= self.makespan:

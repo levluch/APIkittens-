@@ -1,6 +1,7 @@
 from PySide6.QtWidgets import QWidget, QMessageBox, QFileDialog, QSizePolicy
 from PySide6.QtCore import QThread, Signal, QTimer
-from desktop.ui_py.ui_initial_data_page import Ui_initial_data_page
+
+from ui_py.ui_initial_data_page import Ui_initial_data_page
 
 
 class SaveFileThread(QThread):
