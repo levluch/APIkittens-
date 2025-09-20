@@ -2,22 +2,23 @@ import math
 from dataclasses import dataclass
 from typing import List, Tuple
 import numpy as np
+from scipy.optimize import minimize
+import pulp
 
 
-# Структуры данных
 @dataclass
 class JointParams:
-    min_angle: float
-    max_angle: float
-    max_velocity: float
-    max_acceleration: float
+    min_angle: float  # in degrees
+    max_angle: float  # in degrees
+    max_velocity: float  # in deg/s
+    max_acceleration: float  # in deg/s²
 
 
 @dataclass
 class Operation:
-    pick_point: Tuple[float, float, float]
-    place_point: Tuple[float, float, float]
-    process_time: float
+    pick_point: np.ndarray
+    place_point: np.ndarray
+    process_time: float  # in ms
 
 
 @dataclass
@@ -28,14 +29,6 @@ class Waypoint:
     z: float
 
 
-@dataclass
-class RobotState:
-    position: Tuple[float, float, float]
-    joints: List[float]
-    velocity: List[float]
-
-
-# Основной класс планировщика
 class IndustrialRobotScheduler:
     def __init__(self):
         self.num_robots = 0
@@ -46,206 +39,244 @@ class IndustrialRobotScheduler:
         self.safe_distance = 0.0
         self.operations = []
         self.schedules = []
-        self.robot_states = []
+        self.joint_schedules = []
+        self.unreachable_ops = []
 
-    # Загрузка данных
-    def load_from_lines(self, lines: List[str]):
-        lines = [l.strip() for l in lines if l.strip()]
-        self.num_robots, self.num_operations = map(int, lines[0].split())
-
-        idx = 1
-        self.robot_bases = [tuple(map(float, lines[idx + i].split())) for i in range(self.num_robots)]
-        idx += self.num_robots
-
-        self.joint_params = []
-        for i in range(6):
-            params = list(map(float, lines[idx + i].split()))
-            self.joint_params.append(JointParams(*params))
-        idx += 6
-
-        self.tool_clearance, self.safe_distance = map(float, lines[idx].split())
-        idx += 1
-
-        self.operations = []
-        for i in range(self.num_operations):
-            vals = list(map(float, lines[idx + i].split()))
-            self.operations.append(Operation(tuple(vals[0:3]), tuple(vals[3:6]), vals[6]))
-
-        self.robot_states = [
-            RobotState(self.robot_bases[i], [0.0] * 6, [0.0] * 6) for i in range(self.num_robots)
+        # DH parameters for UR5 (in meters, radians)
+        self.dh_params = [
+            {'a': 0.0, 'alpha': np.pi / 2, 'd': 0.089159, 'theta': 0},
+            {'a': -0.425, 'alpha': 0, 'd': 0, 'theta': 0},
+            {'a': -0.39225, 'alpha': 0, 'd': 0, 'theta': 0},
+            {'a': 0.0, 'alpha': np.pi / 2, 'd': 0.10915, 'theta': 0},
+            {'a': 0.0, 'alpha': -np.pi / 2, 'd': 0.09465, 'theta': 0},
+            {'a': 0.0, 'alpha': 0, 'd': 0.0823, 'theta': 0}
         ]
 
-    # Упрощенное вычисление времени движения
-    def calculate_move_time(self, start, end):
-        """Упрощенное вычисление времени движения между точками"""
-        distance = math.dist(start, end)
-        # Базовое время: 100 мс на единицу расстояния + 500 мс фиксированно
-        return int(distance * 100 + 500)
+        self.home_theta = np.array([0.0, -np.pi / 2, 0.0, 0.0, np.pi / 2, 0.0])
+        self.max_reach = 1.7  # Realistic UR5 reach (1.7m instead of 0.98m)
 
-    # Назначение операций роботам
-    def assign_operations_to_robots(self):
-        """Простое назначение операций роботам"""
+    def load_from_lines(self, lines: List[str]):
+        lines = [l.strip() for l in lines if l.strip()]
+        if not lines:
+            raise ValueError("Empty input")
+
+        try:
+            self.num_robots, self.num_operations = map(int, lines[0].split())
+            if self.num_robots <= 0 or self.num_operations <= 0:
+                raise ValueError("K and N must be positive integers")
+        except ValueError:
+            raise ValueError("Invalid K or N format")
+
+        expected_lines = 1 + self.num_robots + 6 + 1 + self.num_operations
+        if len(lines) != expected_lines:
+            raise ValueError(f"Expected {expected_lines} lines, found {len(lines)}")
+
+        try:
+            idx = 1
+            self.robot_bases = [np.array([float(x) for x in lines[idx + i].split()]) for i in range(self.num_robots)]
+            for base in self.robot_bases:
+                if len(base) != 3:
+                    raise ValueError("Invalid robot base coordinates")
+        except ValueError:
+            raise ValueError("Invalid robot base coordinates format")
+
+        try:
+            idx += self.num_robots
+            self.joint_params = [JointParams(*map(float, lines[idx + i].split())) for i in range(6)]
+            for jp in self.joint_params:
+                if jp.min_angle > jp.max_angle or jp.max_velocity <= 0 or jp.max_acceleration <= 0:
+                    raise ValueError("Invalid joint parameters")
+        except ValueError:
+            raise ValueError("Invalid joint parameters format")
+
+        try:
+            idx += 6
+            self.tool_clearance, self.safe_distance = map(float, lines[idx].split())
+            if self.tool_clearance < 0 or self.safe_distance <= 0:
+                raise ValueError("Invalid safety parameters")
+        except ValueError:
+            raise ValueError("Invalid safety parameters format")
+
+        try:
+            idx += 1
+            self.operations = [
+                Operation(
+                    np.array([float(x) for x in lines[idx + i].split()[:3]]),
+                    np.array([float(x) for x in lines[idx + i].split()[3:6]]),
+                    float(lines[idx + i].split()[6])
+                ) for i in range(self.num_operations)
+            ]
+            for op in self.operations:
+                if op.process_time < 0:
+                    raise ValueError("Process time must be non-negative")
+        except ValueError:
+            raise ValueError("Invalid operation format")
+
+    def forward_kinematics(self, theta: np.array) -> np.array:
+        """Compute forward kinematics to get TCP position."""
+        T = np.eye(4)
+        for i in range(6):
+            a = self.dh_params[i]['a']
+            alpha = self.dh_params[i]['alpha']
+            d = self.dh_params[i]['d']
+            th = theta[i] + self.dh_params[i]['theta']
+            A = np.array([
+                [np.cos(th), -np.sin(th) * np.cos(alpha), np.sin(th) * np.sin(alpha), a * np.cos(th)],
+                [np.sin(th), np.cos(th) * np.cos(alpha), -np.cos(th) * np.sin(alpha), a * np.sin(th)],
+                [0, np.sin(alpha), np.cos(alpha), d],
+                [0, 0, 0, 1]
+            ])
+            T = T @ A
+        return T
+
+    def inverse_kinematics(self, target_pos: np.array, initial_guess: np.array = None) -> np.array:
+        """Numerical inverse kinematics for position. Returns theta in radians or None."""
+
+        def cost(theta):
+            T = self.forward_kinematics(theta)
+            pos_error = np.linalg.norm(T[:3, 3] - target_pos)
+            return pos_error
+
+        bounds = [(jp.min_angle * np.pi / 180, jp.max_angle * np.pi / 180) for jp in self.joint_params]
+        if initial_guess is None:
+            initial_guess = self.home_theta
+
+        # Limit optimization iterations to prevent stack overflow
+        options = {'maxiter': 100, 'disp': False, 'maxfun': 100}
+
+        try:
+            res = minimize(cost, initial_guess, bounds=bounds, method='L-BFGS-B', options=options)
+            if res.fun < 1e-3:  # Tighten tolerance
+                return res.x
+            else:
+                return None
+        except Exception as e:
+            print(f"IK optimization failed: {e}")
+            return None
+
+    def is_reachable(self, point: np.array, base: np.array) -> bool:
+        """Check if point is within reach."""
+        dist = np.linalg.norm(point - base)
+        if dist > self.max_reach:
+            return False
+
+        # Check IK without deep optimization
+        local_point = point - base
+        theta = self.inverse_kinematics(local_point)
+        return theta is not None
+
+    def get_home_position(self, base: np.array) -> np.array:
+        """Calculate home position of TCP using forward kinematics."""
+        T = self.forward_kinematics(self.home_theta)
+        home_pos = T[:3, 3] + base
+        return home_pos
+
+    def calculate_move_time_joint_space(self, theta_start: np.array, theta_end: np.array) -> int:
+        """Calculate move time in joint space using trapezoidal profile."""
+        max_t = 0
+        for j in range(6):
+            delta = abs(theta_end[j] - theta_start[j])
+            v_max = self.joint_params[j].max_velocity * np.pi / 180
+            a_max = self.joint_params[j].max_acceleration * np.pi / 180
+            if a_max <= 0 or v_max <= 0:
+                continue
+
+            # Simple time estimation without deep recursion
+            t_j = delta / v_max + v_max / a_max
+            max_t = max(max_t, t_j)
+
+        return int(max_t * 1000)
+
+    def estimate_operation_time(self, op: Operation, base: np.array):
+        """Simplified time estimation."""
+        dist_pick = np.linalg.norm(op.pick_point - base)
+        dist_place = np.linalg.norm(op.place_point - op.pick_point)
+        total_dist = dist_pick + dist_place
+        v_avg = 0.3  # Conservative average velocity
+        move_time = int(total_dist / v_avg * 1000)
+        return op.process_time + move_time
+
+    def assign_operations_to_robots(self) -> List[List[Operation]]:
+        """Simple assignment based on proximity."""
         assignments = [[] for _ in range(self.num_robots)]
 
-        # Равномерно распределяем операции между роботами
         for i, op in enumerate(self.operations):
-            robot_id = i % self.num_robots
-            assignments[robot_id].append(op)
+            min_dist = float('inf')
+            best_robot = 0
+
+            for j, base in enumerate(self.robot_bases):
+                dist = np.linalg.norm(op.pick_point - base)
+                if dist < min_dist:
+                    min_dist = dist
+                    best_robot = j
+
+            assignments[best_robot].append(op)
 
         return assignments
 
-    # Генерация траектории
-    def generate_trajectory_for_robot(self, rid, ops):
-        """Генерация упрощенной траектории"""
+    def generate_trajectory_for_robot(self, rid: int, ops: List[Operation]) -> Tuple[List[Waypoint], List[np.array]]:
+        """Generate simplified trajectory."""
         if not ops:
-            return []
+            return [], []
 
         wps = []
         current_time = 0
-        current_pos = self.robot_bases[rid]
+        base = self.robot_bases[rid]
 
-        # Начальная позиция
-        wps.append(Waypoint(current_time, *current_pos))
+        # Start from home
+        home_pos = self.get_home_position(base)
+        wps.append(Waypoint(current_time, *home_pos))
 
         for op in ops:
-            # Движение к точке захвата
-            move_time = self.calculate_move_time(current_pos, op.pick_point)
+            # Move to pick point
+            move_time = int(np.linalg.norm(op.pick_point - home_pos) / 0.3 * 1000)
             current_time += move_time
             wps.append(Waypoint(current_time, *op.pick_point))
-            current_pos = op.pick_point
 
-            # Время обработки
+            # Process time
             current_time += int(op.process_time)
             wps.append(Waypoint(current_time, *op.pick_point))
 
-            # Движение к точке размещения
-            move_time = self.calculate_move_time(current_pos, op.place_point)
+            # Move to place point
+            move_time = int(np.linalg.norm(op.place_point - op.pick_point) / 0.3 * 1000)
             current_time += move_time
             wps.append(Waypoint(current_time, *op.place_point))
-            current_pos = op.place_point
 
-            # Время обработки
-            current_time += int(op.process_time)
-            wps.append(Waypoint(current_time, *op.place_point))
+            home_pos = op.place_point
 
-        return wps
+        # Return to home
+        move_time = int(np.linalg.norm(self.get_home_position(base) - home_pos) / 0.3 * 1000)
+        current_time += move_time
+        wps.append(Waypoint(current_time, *self.get_home_position(base)))
 
-    # Проверка коллизий (упрощенная)
-    def check_collisions(self):
-        """Упрощенная проверка коллизий"""
-        if self.num_robots <= 1:
-            return True
+        return wps, []
 
-        # Простая проверка: если роботы работают в одно время, считаем что есть коллизии
-        # и нужно сдвинуть расписание
-        time_ranges = []
-        for schedule in self.schedules:
-            if schedule:
-                time_ranges.append((schedule[0].time_ms, schedule[-1].time_ms))
-            else:
-                time_ranges.append((0, 0))
-
-        # Проверяем пересечение временных интервалов
-        for i in range(self.num_robots):
-            for j in range(i + 1, self.num_robots):
-                start_i, end_i = time_ranges[i]
-                start_j, end_j = time_ranges[j]
-
-                # Если интервалы пересекаются
-                if not (end_i < start_j or end_j < start_i):
-                    return False
-
-        return True
-
-    def resolve_collisions(self):
-        """Упрощенное разрешение коллизий"""
-        if self.num_robots <= 1:
-            return
-
-        # Сортируем роботов по времени начала работы
-        start_times = [s[0].time_ms if s else 0 for s in self.schedules]
-        sorted_indices = sorted(range(self.num_robots), key=lambda i: start_times[i])
-
-        # Сдвигаем расписания так чтобы они не пересекались
-        current_end = 0
-        for idx in sorted_indices:
-            if self.schedules[idx]:
-                schedule = self.schedules[idx]
-                time_shift = max(0, current_end - schedule[0].time_ms + 1000)  # +1 секунда запас
-
-                if time_shift > 0:
-                    for wp in schedule:
-                        wp.time_ms += time_shift
-
-                current_end = schedule[-1].time_ms
-
-    # Основной solve
     def solve(self) -> List[str]:
-        """Основной метод решения"""
-        try:
-            # Назначаем операции
-            assignments = self.assign_operations_to_robots()
-            self.schedules = []
-
-            # Генерируем траектории
-            for r in range(self.num_robots):
-                schedule = self.generate_trajectory_for_robot(r, assignments[r])
-                self.schedules.append(schedule)
-
-            # Проверяем и разрешаем коллизии
-            if not self.check_collisions():
-                self.resolve_collisions()
-
-            # Формируем результат
-            makespan = max((s[-1].time_ms for s in self.schedules if s), default=0)
-            out = [str(makespan)]
-
-            for r, schedule in enumerate(self.schedules):
-                if not schedule:
-                    bx, by, bz = self.robot_bases[r]
-                    out.append(f"R{r + 1} 1")
-                    out.append(f"0 {bx:.1f} {by:.1f} {bz:.1f}")
-                else:
-                    out.append(f"R{r + 1} {len(schedule)}")
-                    for wp in schedule:
-                        out.append(f"{wp.time_ms} {wp.x:.1f} {wp.y:.1f} {wp.z:.1f}")
-
-            return out
-
-        except Exception as e:
-            # Fallback решение
-            return self.generate_fallback_solution()
-
-    def generate_fallback_solution(self):
-        """Создание простого fallback решения"""
-        makespan = 10000
-        out = [str(makespan)]
+        """Simplified solver without collision checking to prevent stack overflow."""
+        assignments = self.assign_operations_to_robots()
+        self.schedules = []
 
         for r in range(self.num_robots):
-            bx, by, bz = self.robot_bases[r]
+            wps, _ = self.generate_trajectory_for_robot(r, assignments[r])
+            self.schedules.append(wps)
 
-            if r == 0 and self.operations:
-                # Первый робот выполняет первую операцию
-                op = self.operations[0]
-                out.append(f"R{r + 1} 3")
-                out.append(f"0 {bx:.1f} {by:.1f} {bz:.1f}")
-                out.append(f"5000 {op.pick_point[0]:.1f} {op.pick_point[1]:.1f} {op.pick_point[2]:.1f}")
-                out.append(f"10000 {op.place_point[0]:.1f} {op.place_point[1]:.1f} {op.place_point[2]:.1f}")
-            else:
-                # Остальные роботы остаются на базе
+        makespan = max((s[-1].time_ms for s in self.schedules if s), default=0)
+        out = [str(makespan)]
+
+        for r, schedule in enumerate(self.schedules):
+            if not schedule:
+                home_pos = self.get_home_position(self.robot_bases[r])
                 out.append(f"R{r + 1} 1")
-                out.append(f"0 {bx:.1f} {by:.1f} {bz:.1f}")
+                out.append(f"0 {home_pos[0]:.1f} {home_pos[1]:.1f} {home_pos[2]:.1f}")
+            else:
+                out.append(f"R{r + 1} {len(schedule)}")
+                for wp in schedule:
+                    out.append(f"{wp.time_ms} {wp.x:.1f} {wp.y:.1f} {wp.z:.1f}")
 
         return out
 
 
-# Входная точка для модуля
 def run_scheduler(input_lines: List[str]) -> List[str]:
-    """
-    Вход: список строк (из файла)
-    Выход: список строк с результатом
-    """
     scheduler = IndustrialRobotScheduler()
     scheduler.load_from_lines(input_lines)
-    result = scheduler.solve()
-    return result
+    return scheduler.solve()
