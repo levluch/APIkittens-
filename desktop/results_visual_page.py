@@ -22,6 +22,7 @@ class ResultsVisualPage(QWidget, Ui_results_visual_page):
         self.coord_labels = {}  # {r_id: QGraphicsTextItem for coordinates}
         self.base_labels = []  # List of QGraphicsTextItem for bases
         self.pick_place_labels = []  # List of QGraphicsTextItem for pick/place points
+        self.trajectory_lines = {}
         self.scale_factor = 10
         self.view_scale = 1.0  # Initial view scale (100%)
         self.is_animating = False
@@ -66,6 +67,7 @@ class ResultsVisualPage(QWidget, Ui_results_visual_page):
         self.pick_place_labels = []
         self.coord_labels = {}
         self.manipulators = {}
+        self.trajectory_lines = {r_id: [] for r_id in self.robots.keys()}
 
         all_x = [wp['x'] for r in self.robots.values() for wp in r] + \
                 [op['pick'][0] for op in self.operations] + \
@@ -89,19 +91,6 @@ class ResultsVisualPage(QWidget, Ui_results_visual_page):
             label.setPos(base[0] * self.scale_factor + 5, base[1] * self.scale_factor + 5)
             self.base_labels.append(label)
 
-        # Draw trajectories
-        for r_id, waypoints in self.robots.items():
-            # Generate unique color for each robot
-            hue = (int(r_id[1:]) - 1) * 137 % 360  # Golden angle for color distribution
-            color = QColor.fromHsv(hue, 200, 200)
-            pen = QPen(color, 1)
-            pen.setWidthF(1.5)  # Slightly thicker line for visibility
-            for i in range(len(waypoints) - 1):
-                wp1, wp2 = waypoints[i], waypoints[i + 1]
-                self.scene.addLine(wp1['x'] * self.scale_factor, wp1['y'] * self.scale_factor,
-                                   wp2['x'] * self.scale_factor, wp2['y'] * self.scale_factor,
-                                   pen)
-
         # Draw pick/place points with labels
         for idx, op in enumerate(self.operations):
             pick_ellipse = self.scene.addEllipse(op['pick'][0] * self.scale_factor - 3,
@@ -121,7 +110,6 @@ class ResultsVisualPage(QWidget, Ui_results_visual_page):
 
         # Initialize manipulators and coord labels dynamically
         for r_id in self.robots.keys():
-            # Generate unique color
             hue = (int(r_id[1:]) - 1) * 137 % 360
             color = QColor.fromHsv(hue, 200, 200)
             manipulator = self.scene.addEllipse(0, 0, 8, 8, QPen(color, 1), QBrush(color))
@@ -154,6 +142,11 @@ class ResultsVisualPage(QWidget, Ui_results_visual_page):
         self.current_time = 0
         self.time_horizontalSlider.setValue(0)
         self.time_label.setText(f"Текущее время: {self.current_time} мс")
+        # Clear trajectory lines
+        for r_id in self.trajectory_lines:
+            for line in self.trajectory_lines[r_id]:
+                self.scene.removeItem(line)
+        self.trajectory_lines = {r_id: [] for r_id in self.robots.keys()}
         self.update_positions()
 
     def slider_moved(self, value):
@@ -179,13 +172,38 @@ class ResultsVisualPage(QWidget, Ui_results_visual_page):
                 pos = self.interpolate_position(waypoints, self.current_time)
                 base_size = 8
                 z = self.interpolate_z(waypoints, self.current_time)
-                size = base_size + z / 10  # Adjust size based on Z (scale as needed)
+                size = base_size + z / 10
                 self.manipulators[r_id].setRect(pos[0] * self.scale_factor - size / 2,
                                                 pos[1] * self.scale_factor - size / 2,
                                                 size, size)
-                # Update coord label
                 self.coord_labels[r_id].setPlainText(f"{r_id}: ({pos[0]:.1f}, {pos[1]:.1f}, {z:.1f})")
                 self.coord_labels[r_id].setPos(pos[0] * self.scale_factor + 5, pos[1] * self.scale_factor + 5)
+
+                # Draw trajectory lines up to current time
+                hue = (int(r_id[1:]) - 1) * 137 % 360
+                color = QColor.fromHsv(hue, 200, 200)
+                pen = QPen(color, 1.5)
+                for i in range(len(waypoints) - 1):
+                    wp1, wp2 = waypoints[i], waypoints[i + 1]
+                    if wp1['t'] <= self.current_time:
+                        # Only draw the segment if it should be visible at current time
+                        t_start = wp1['t']
+                        t_end = min(wp2['t'], self.current_time)
+                        if t_start != t_end:
+                            frac = (t_end - wp1['t']) / (wp2['t'] - wp1['t'])
+                            x1 = wp1['x']
+                            y1 = wp1['y']
+                            x2 = wp1['x'] + frac * (wp2['x'] - wp1['x'])
+                            y2 = wp1['y'] + frac * (wp2['y'] - wp1['y'])
+                            # Check if this line segment is already drawn
+                            if i >= len(self.trajectory_lines[r_id]):
+                                line = self.scene.addLine(x1 * self.scale_factor, y1 * self.scale_factor,
+                                                          x2 * self.scale_factor, y2 * self.scale_factor, pen)
+                                self.trajectory_lines[r_id].append(line)
+                            else:
+                                # Update existing line segment
+                                self.trajectory_lines[r_id][i].setLine(x1 * self.scale_factor, y1 * self.scale_factor,
+                                                                       x2 * self.scale_factor, y2 * self.scale_factor)
 
     @staticmethod
     def interpolate_position(waypoints, t):
