@@ -14,7 +14,7 @@ class ResultsDataPage(QWidget, Ui_results_data_page):
         self.save_file_button.clicked.connect(self.save_file)
 
     def display_results(self, results):
-        self.plainTextEdit.setPlainText(results)
+        self.textBrowser.setText(results)
 
     def save_file(self):
         fname, _ = QFileDialog.getSaveFileName(self, "Выберите файл", "", "Text Files (*.txt)")
