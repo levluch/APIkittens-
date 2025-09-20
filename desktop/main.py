@@ -2,7 +2,7 @@ import sys
 import qdarktheme
 from PySide6.QtWidgets import QApplication
 
-from main_window import MainWindow
+from desktop.main_window import MainWindow
 
 
 def hook(a, b, c):

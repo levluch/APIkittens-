@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 ################################################################################
-## Form generated from reading UI file 'results_visual_pageGmYPcd.ui'
+## Form generated from reading UI file 'results_visual_pageOnGUdf.ui'
 ##
 ## Created by: Qt User Interface Compiler version 6.8.2
 ##
@@ -86,8 +86,8 @@ class Ui_results_visual_page(object):
         self.view_speed_slider = QSlider(self.groupBox)
         self.view_speed_slider.setObjectName(u"view_speed_slider")
         self.view_speed_slider.setMinimum(1)
-        self.view_speed_slider.setMaximum(500)
-        self.view_speed_slider.setValue(250)
+        self.view_speed_slider.setMaximum(49)
+        self.view_speed_slider.setValue(25)
         self.view_speed_slider.setOrientation(Qt.Orientation.Horizontal)
 
         self.verticalLayout_3.addWidget(self.view_speed_slider)

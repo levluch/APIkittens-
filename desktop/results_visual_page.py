@@ -2,7 +2,7 @@ from PySide6.QtWidgets import QWidget, QGraphicsScene, QGraphicsEllipseItem, QGr
 from PySide6.QtCore import QTimer, Qt
 from PySide6.QtGui import QPen, QBrush, QColor
 
-from ui_py.ui_results_visual_page import Ui_results_visual_page
+from desktop.ui_py.ui_results_visual_page import Ui_results_visual_page
 
 
 class ResultsVisualPage(QWidget, Ui_results_visual_page):
@@ -27,7 +27,7 @@ class ResultsVisualPage(QWidget, Ui_results_visual_page):
         self.scale_factor = 10
         self.view_scale = 1.0
         self.is_animating = False
-        self.step_size = 150
+        self.step_size = 50
 
         self.init_ui()
 
@@ -124,7 +124,7 @@ class ResultsVisualPage(QWidget, Ui_results_visual_page):
 
     def change_speed_timer(self):
         if self.is_animating:
-            self.timer.start(500 - self.view_speed_slider.value())
+            self.timer.start(50 - self.view_speed_slider.value())
 
     def start_animation(self):
         if self.current_time >= self.makespan:

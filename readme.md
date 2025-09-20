@@ -18,10 +18,15 @@
 - pyqtdarktheme==0.1.7
 - scipy==1.16.2
 
+## Релиз
+
+Собранную программу можно скачать из релизов репозитория:
+https://github.com/levluch/APIkittens-/releases/
+
 ## Установка
 1. **Клонируйте репозиторий**:
    ```bash
-   git clone <URL_репозитория>
+   git clone https://github.com/levluch/APIkittens-.git
    cd <название_папки_проекта>
    ```
 

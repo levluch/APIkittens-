@@ -2,7 +2,7 @@ import qdarktheme
 from PySide6.QtWidgets import QPushButton, QApplication, QWidget
 from PySide6.QtCore import Slot
 
-from ui_py.ui_navigation_menu import Ui_navigation_menu
+from desktop.ui_py.ui_navigation_menu import Ui_navigation_menu
 
 
 class NavigationMenu(QWidget, Ui_navigation_menu):
